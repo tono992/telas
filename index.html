@@ -99,6 +99,11 @@
     </div>
 
     <script>
+        // Cargar elementos guardados al iniciar la página
+        document.addEventListener("DOMContentLoaded", function () {
+            cargarElementos();
+        });
+
         function guardar() {
             // Obtener el valor del textarea
             var entrada = document.getElementById('entrada').value;
@@ -134,7 +139,7 @@
             spanEliminar.className = "eliminar-item";
             spanEliminar.innerHTML = "x";
             spanEliminar.onclick = function() {
-                li.remove(); // Eliminar el elemento al hacer clic en la x
+                eliminarElemento(li); // Eliminar el elemento al hacer clic en la x
             };
             acciones.appendChild(spanEliminar);
 
@@ -143,6 +148,9 @@
 
             // Añadir el nuevo elemento a la lista
             document.getElementById("lista").appendChild(li);
+
+            // Guardar el elemento en localStorage
+            guardarEnLocalStorage(entrada);
 
             // Limpiar el textarea
             document.getElementById('entrada').value = "";
@@ -154,6 +162,17 @@
             while (lista.firstChild) {
                 lista.removeChild(lista.firstChild);
             }
+
+            // Limpiar localStorage
+            localStorage.removeItem("agenda");
+        }
+
+        function eliminarElemento(elemento) {
+            // Eliminar el elemento de la lista
+            elemento.remove();
+
+            // Actualizar localStorage
+            actualizarLocalStorage();
         }
 
         function copiarTexto(texto) {
@@ -167,6 +186,68 @@
 
             // Mostrar un mensaje de éxito
             //alert("Texto copiado: " + texto);
+        }
+
+        function guardarEnLocalStorage(texto) {
+            // Obtener los elementos actuales de localStorage
+            var elementos = JSON.parse(localStorage.getItem("agenda")) || [];
+
+            // Añadir el nuevo elemento
+            elementos.push(texto);
+
+            // Guardar en localStorage
+            localStorage.setItem("agenda", JSON.stringify(elementos));
+        }
+
+        function actualizarLocalStorage() {
+            // Obtener todos los elementos de la lista
+            var elementos = [];
+            var lista = document.getElementById("lista").children;
+            for (var i = 0; i < lista.length; i++) {
+                elementos.push(lista[i].childNodes[0].textContent);
+            }
+
+            // Guardar en localStorage
+            localStorage.setItem("agenda", JSON.stringify(elementos));
+        }
+
+        function cargarElementos() {
+            // Obtener los elementos guardados en localStorage
+            var elementos = JSON.parse(localStorage.getItem("agenda")) || [];
+
+            // Recorrer los elementos y añadirlos a la lista
+            elementos.forEach(function (texto) {
+                var li = document.createElement("li");
+                li.innerHTML = texto;
+
+                // Contenedor para los botones de acciones
+                var acciones = document.createElement("div");
+                acciones.className = "acciones";
+
+                // Botón para copiar el texto
+                var spanCopiar = document.createElement("span");
+                spanCopiar.className = "copiar-item";
+                spanCopiar.innerHTML = "cc";
+                spanCopiar.onclick = function() {
+                    copiarTexto(li.childNodes[0].textContent); // Copiar solo el texto guardado
+                };
+                acciones.appendChild(spanCopiar);
+
+                // Botón para eliminar el elemento
+                var spanEliminar = document.createElement("span");
+                spanEliminar.className = "eliminar-item";
+                spanEliminar.innerHTML = "x";
+                spanEliminar.onclick = function() {
+                    eliminarElemento(li); // Eliminar el elemento al hacer clic en la x
+                };
+                acciones.appendChild(spanEliminar);
+
+                // Añadir los botones al elemento de la lista
+                li.appendChild(acciones);
+
+                // Añadir el nuevo elemento a la lista
+                document.getElementById("lista").appendChild(li);
+            });
         }
     </script>
 
