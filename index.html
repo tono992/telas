@@ -3,253 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda Nocturna con Copiar</title>
+    <title>Agenda en GitHub</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #1e1e1e; /* Fondo oscuro */
-            color: #e0e0e0; /* Texto claro */
-        }
-        textarea {
-            width: 100%;
-            height: 100px;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-            background-color: #2d2d2d; /* Fondo oscuro para el textarea */
-            color: #e0e0e0; /* Texto claro */
-            border: 1px solid #444; /* Borde suave */
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        button:hover {
-            opacity: 0.9;
-        }
-        #agenda {
-            margin-top: 20px;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #2d2d2d; /* Fondo oscuro para los elementos */
-            border: 1px solid #444; /* Borde suave */
-            border-radius: 5px;
-            word-wrap: break-word;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        a {
-            color: #4dabf7; /* Azul suave para enlaces */
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .acciones {
-            display: flex;
-            gap: 10px; /* Espacio entre los botones */
-        }
-        .eliminar-item, .copiar-item {
-            cursor: pointer;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        .eliminar-item {
-            color: #ff6b6b; /* Rojo suave para la x */
-        }
-        .copiar-item {
-            color: #4dabf7; /* Azul suave para el cc */
-        }
-        /* Estilos específicos para los botones */
-        #btn-guardar {
-            background-color: #4dabf7; /* Azul suave */
-            color: #fff;
-        }
-        #btn-eliminar-todo {
-            background-color: #ff6b6b; /* Rojo suave */
-            color: #fff;
-        }
+        body { font-family: Arial, sans-serif; background-color: #1e1e1e; color: #e0e0e0; padding: 20px; }
+        textarea { width: 100%; height: 100px; margin-bottom: 10px; }
+        button { padding: 10px; margin-right: 10px; cursor: pointer; }
+        ul { list-style: none; padding: 0; }
+        li { background: #2d2d2d; padding: 10px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
-
-    <h1>Agenda Nocturna con Copiar</h1>
-    <textarea id="entrada" placeholder="Escribe algo para guardar..."></textarea>
-    <div>
-        <button id="btn-guardar" onclick="guardar()">Guardar</button>
-        <button id="btn-eliminar-todo" onclick="eliminarTodo()">Eliminar Todo</button>
-    </div>
-
-    <div id="agenda">
-        <h2>Elementos Guardados:</h2>
-        <ul id="lista"></ul>
-    </div>
-
+    <h1>Agenda en GitHub</h1>
+    <textarea id="entrada" placeholder="Escribe algo..."></textarea>
+    <button onclick="guardarTexto()">Guardar</button>
+    <button onclick="cargarTextos()">Cargar</button>
+    <ul id="lista"></ul>
+    
     <script>
-        // Cargar elementos guardados al iniciar la página
-        document.addEventListener("DOMContentLoaded", function () {
-            cargarElementos();
-        });
-
-        function guardar() {
-            // Obtener el valor del textarea
-            var entrada = document.getElementById('entrada').value;
-
-            // Verificar que la entrada no esté vacía
-            if (entrada.trim() === "") {
-                alert("Por favor, escribe algo para guardar.");
-                return;
+        const repo = "tono992/telas"; // Repositorio actualizado
+        const filePath = "textos.json";
+        const token = "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"; // Genera un token en GitHub (con permisos de repos)
+        
+        async function cargarTextos() {
+            try {
+                let response = await fetch(`https://raw.githubusercontent.com/${repo}/main/${filePath}`);
+                let data = await response.json();
+                document.getElementById("lista").innerHTML = data.map(texto => `<li>${texto}</li>`).join(" ");
+            } catch (error) {
+                console.error("Error cargando textos", error);
             }
-
-            // Convertir enlaces en texto a links clickeables
-            entrada = entrada.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-
-            // Crear un nuevo elemento de lista
-            var li = document.createElement("li");
-            li.innerHTML = entrada; // Usar innerHTML para interpretar el enlace como HTML
-
-            // Contenedor para los botones de acciones
-            var acciones = document.createElement("div");
-            acciones.className = "acciones";
-
-            // Botón para copiar el texto
-            var spanCopiar = document.createElement("span");
-            spanCopiar.className = "copiar-item";
-            spanCopiar.innerHTML = "cc";
-            spanCopiar.onclick = function() {
-                copiarTexto(li.childNodes[0].textContent); // Copiar solo el texto guardado
-            };
-            acciones.appendChild(spanCopiar);
-
-            // Botón para eliminar el elemento
-            var spanEliminar = document.createElement("span");
-            spanEliminar.className = "eliminar-item";
-            spanEliminar.innerHTML = "x";
-            spanEliminar.onclick = function() {
-                eliminarElemento(li); // Eliminar el elemento al hacer clic en la x
-            };
-            acciones.appendChild(spanEliminar);
-
-            // Añadir los botones al elemento de la lista
-            li.appendChild(acciones);
-
-            // Añadir el nuevo elemento a la lista
-            document.getElementById("lista").appendChild(li);
-
-            // Guardar el elemento en localStorage
-            guardarEnLocalStorage(entrada);
-
-            // Limpiar el textarea
-            document.getElementById('entrada').value = "";
         }
-
-        function eliminarTodo() {
-            // Eliminar todos los elementos de la lista
-            var lista = document.getElementById("lista");
-            while (lista.firstChild) {
-                lista.removeChild(lista.firstChild);
-            }
-
-            // Limpiar localStorage
-            localStorage.removeItem("agenda");
-        }
-
-        function eliminarElemento(elemento) {
-            // Eliminar el elemento de la lista
-            elemento.remove();
-
-            // Actualizar localStorage
-            actualizarLocalStorage();
-        }
-
-        function copiarTexto(texto) {
-            // Crear un textarea temporal para copiar el texto
-            var textareaTemp = document.createElement("textarea");
-            textareaTemp.value = texto;
-            document.body.appendChild(textareaTemp);
-            textareaTemp.select();
-            document.execCommand("copy"); // Copiar el texto
-            document.body.removeChild(textareaTemp); // Eliminar el textarea temporal
-
-            // Mostrar un mensaje de éxito
-            //alert("Texto copiado: " + texto);
-        }
-
-        function guardarEnLocalStorage(texto) {
-            // Obtener los elementos actuales de localStorage
-            var elementos = JSON.parse(localStorage.getItem("agenda")) || [];
-
-            // Añadir el nuevo elemento
-            elementos.push(texto);
-
-            // Guardar en localStorage
-            localStorage.setItem("agenda", JSON.stringify(elementos));
-        }
-
-        function actualizarLocalStorage() {
-            // Obtener todos los elementos de la lista
-            var elementos = [];
-            var lista = document.getElementById("lista").children;
-            for (var i = 0; i < lista.length; i++) {
-                elementos.push(lista[i].childNodes[0].textContent);
-            }
-
-            // Guardar en localStorage
-            localStorage.setItem("agenda", JSON.stringify(elementos));
-        }
-
-        function cargarElementos() {
-            // Obtener los elementos guardados en localStorage
-            var elementos = JSON.parse(localStorage.getItem("agenda")) || [];
-
-            // Recorrer los elementos y añadirlos a la lista
-            elementos.forEach(function (texto) {
-                var li = document.createElement("li");
-                li.innerHTML = texto;
-
-                // Contenedor para los botones de acciones
-                var acciones = document.createElement("div");
-                acciones.className = "acciones";
-
-                // Botón para copiar el texto
-                var spanCopiar = document.createElement("span");
-                spanCopiar.className = "copiar-item";
-                spanCopiar.innerHTML = "cc";
-                spanCopiar.onclick = function() {
-                    copiarTexto(li.childNodes[0].textContent); // Copiar solo el texto guardado
-                };
-                acciones.appendChild(spanCopiar);
-
-                // Botón para eliminar el elemento
-                var spanEliminar = document.createElement("span");
-                spanEliminar.className = "eliminar-item";
-                spanEliminar.innerHTML = "x";
-                spanEliminar.onclick = function() {
-                    eliminarElemento(li); // Eliminar el elemento al hacer clic en la x
-                };
-                acciones.appendChild(spanEliminar);
-
-                // Añadir los botones al elemento de la lista
-                li.appendChild(acciones);
-
-                // Añadir el nuevo elemento a la lista
-                document.getElementById("lista").appendChild(li);
+        
+        async function guardarTexto() {
+            let nuevoTexto = document.getElementById("entrada").value;
+            if (!nuevoTexto.trim()) return;
+            
+            let response = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`);
+            let fileData = await response.json();
+            let contenidoActual = JSON.parse(atob(fileData.content));
+            contenidoActual.push(nuevoTexto);
+            
+            let updateResponse = await fetch(`https://api.github.com/repos/${repo}/contents/${filePath}`, {
+                method: "PUT",
+                headers: {
+                    "Authorization": `token ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: "Actualizar textos",
+                    content: btoa(JSON.stringify(contenidoActual)),
+                    sha: fileData.sha
+                })
             });
+            
+            if (updateResponse.ok) cargarTextos();
         }
+        
+        cargarTextos();
     </script>
-
 </body>
 </html>
