@@ -3,72 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda con Firebase</title>
+    <title>Agenda con localStorage</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #1e1e1e;
-            color: #e0e0e0;
-        }
-        textarea {
-            width: 100%;
-            height: 100px;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-            background-color: #2d2d2d;
-            color: #e0e0e0;
-            border: 1px solid #444;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        #agenda {
-            margin-top: 20px;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #2d2d2d;
-            border: 1px solid #444;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .acciones {
-            display: flex;
-            gap: 10px;
-        }
-        .copiar-item, .eliminar-item {
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .copiar-item {
-            color: #4dabf7;
-        }
-        .eliminar-item {
-            color: #ff6b6b;
-        }
+        /* Tus estilos CSS aquí */
     </style>
-    <!-- Incluye Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js"></script>
 </head>
 <body>
 
-    <h1>Agenda con Firebase</h1>
+    <h1>Agenda con localStorage</h1>
     <textarea id="entrada" placeholder="Escribe algo para guardar..."></textarea>
     <div>
         <button onclick="guardar()">Guardar</button>
@@ -81,110 +23,53 @@
     </div>
 
     <script>
-        // Configura Firebase con tus credenciales
-        const firebaseConfig = {
-            apiKey: "AIzaSyAOs0mkrrfY-Tc4rlu11boRepF6SQTi0ns",
-            authDomain: "agenda-8a1fe.firebaseapp.com",
-            projectId: "agenda-8a1fe",
-            storageBucket: "agenda-8a1fe.firebasestorage.app",
-            messagingSenderId: "423043113853",
-            appId: "1:423043113853:web:1a81620c6f0f9ee43e2214",
-            measurementId: "G-T08HYR8VTY"
-        };
-
-        // Inicializa Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        console.log("Firebase inicializado correctamente"); // Verifica en la consola
-
         // Cargar elementos guardados al iniciar la página
         document.addEventListener("DOMContentLoaded", cargarElementos);
 
-        async function guardar() {
+        function guardar() {
             const entrada = document.getElementById('entrada').value.trim();
             if (!entrada) {
                 alert("Por favor, escribe algo para guardar.");
                 return;
             }
 
-            // Guardar el elemento en Firestore
-            try {
-                await db.collection("agenda").add({
-                    texto: entrada,
-                    fecha: new Date()
-                });
-                console.log("Elemento guardado en Firestore");
-                cargarElementos(); // Recargar la lista
-            } catch (error) {
-                console.error("Error al guardar en Firestore: ", error);
-            }
+            // Obtener elementos existentes
+            const elementos = JSON.parse(localStorage.getItem('agenda')) || [];
+
+            // Añadir el nuevo elemento al principio
+            elementos.unshift(entrada);
+
+            // Guardar en localStorage
+            localStorage.setItem('agenda', JSON.stringify(elementos));
+
+            // Recargar la lista
+            cargarElementos();
 
             // Limpiar el textarea
             document.getElementById('entrada').value = '';
         }
 
-        async function eliminarTodo() {
-            // Eliminar todos los elementos de Firestore
-            try {
-                const querySnapshot = await db.collection("agenda").get();
-                querySnapshot.forEach(async (doc) => {
-                    await doc.ref.delete();
-                });
-                console.log("Todos los elementos eliminados de Firestore");
-                cargarElementos(); // Recargar la lista
-            } catch (error) {
-                console.error("Error al eliminar elementos: ", error);
-            }
+        function eliminarTodo() {
+            // Eliminar todos los elementos
+            localStorage.removeItem('agenda');
+
+            // Recargar la lista
+            cargarElementos();
         }
 
-        async function cargarElementos() {
+        function cargarElementos() {
             const lista = document.getElementById('lista');
             lista.innerHTML = '';
 
-            // Obtener los elementos de Firestore
-            try {
-                const querySnapshot = await db.collection("agenda").orderBy("fecha", "desc").get();
-                querySnapshot.forEach((doc) => {
-                    const texto = doc.data().texto;
+            // Obtener elementos de localStorage
+            const elementos = JSON.parse(localStorage.getItem('agenda')) || [];
 
-                    // Crear un nuevo elemento de lista
-                    const li = document.createElement('li');
-                    li.innerHTML = texto;
-
-                    // Botón para copiar
-                    const copiar = document.createElement('span');
-                    copiar.className = 'copiar-item';
-                    copiar.innerHTML = 'cc';
-                    copiar.onclick = () => {
-                        navigator.clipboard.writeText(texto);
-                        alert(`Texto copiado: ${texto}`);
-                    };
-
-                    // Botón para eliminar
-                    const eliminar = document.createElement('span');
-                    eliminar.className = 'eliminar-item';
-                    eliminar.innerHTML = 'x';
-                    eliminar.onclick = async () => {
-                        await doc.ref.delete(); // Eliminar el documento de Firestore
-                        cargarElementos(); // Recargar la lista
-                    };
-
-                    // Contenedor de acciones
-                    const acciones = document.createElement('div');
-                    acciones.className = 'acciones';
-                    acciones.appendChild(copiar);
-                    acciones.appendChild(eliminar);
-
-                    // Añadir acciones al elemento
-                    li.appendChild(acciones);
-
-                    // Añadir a la lista
-                    lista.appendChild(li);
-                });
-            } catch (error) {
-                console.error("Error al cargar elementos: ", error);
-            }
+            // Mostrar los elementos
+            elementos.forEach((texto, index) => {
+                const li = document.createElement('li');
+                li.textContent = texto;
+                lista.appendChild(li);
+            });
         }
     </script>
 
