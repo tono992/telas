@@ -7,7 +7,22 @@
     <style>
         /* Tus estilos CSS aquí */
     </style>
-    <!-- Incluye Firebase Modular SDK -->
+</head>
+<body>
+
+    <h1>Agenda Nocturna con Firebase</h1>
+    <textarea id="entrada" placeholder="Escribe algo para guardar..."></textarea>
+    <div>
+        <button id="btn-guardar" onclick="guardar()">Guardar</button>
+        <button id="btn-eliminar-todo" onclick="eliminarTodo()">Eliminar Todo</button>
+    </div>
+
+    <div id="agenda">
+        <h2>Elementos Guardados:</h2>
+        <ul id="lista"></ul>
+    </div>
+
+    <!-- Carga Firebase como módulo -->
     <script type="module">
         // Importa las funciones necesarias de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
@@ -148,20 +163,6 @@
             alert("Texto copiado: " + texto);
         }
     </script>
-</head>
-<body>
-
-    <h1>Agenda Nocturna con Firebase</h1>
-    <textarea id="entrada" placeholder="Escribe algo para guardar..."></textarea>
-    <div>
-        <button id="btn-guardar" onclick="guardar()">Guardar</button>
-        <button id="btn-eliminar-todo" onclick="eliminarTodo()">Eliminar Todo</button>
-    </div>
-
-    <div id="agenda">
-        <h2>Elementos Guardados:</h2>
-        <ul id="lista"></ul>
-    </div>
 
 </body>
 </html>
