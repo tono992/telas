@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prueba de Firebase: Guardar y Mostrar Datos</title>
+    <title>Agenda Nocturna con Firebase</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             background-color: #1e1e1e;
             color: #e0e0e0;
-            text-align: center;
         }
         textarea {
             width: 100%;
@@ -31,21 +30,12 @@
             border-radius: 5px;
             margin-right: 10px;
         }
-        #mensaje {
+        #agenda {
             margin-top: 20px;
-            padding: 20px;
-            border-radius: 5px;
-            font-size: 18px;
         }
-        .exito {
-            background-color: #4CAF50; /* Verde */
-        }
-        .error {
-            background-color: #f44336; /* Rojo */
-        }
-        #lista {
-            margin-top: 20px;
-            text-align: left;
+        ul {
+            list-style-type: none;
+            padding: 0;
         }
         li {
             padding: 10px;
@@ -53,13 +43,30 @@
             background-color: #2d2d2d;
             border: 1px solid #444;
             border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .acciones {
+            display: flex;
+            gap: 10px;
+        }
+        .copiar-item, .eliminar-item {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .copiar-item {
+            color: #4dabf7;
+        }
+        .eliminar-item {
+            color: #ff6b6b;
         }
     </style>
     <!-- Incluye Firebase Modular SDK -->
     <script type="module">
         // Importa las funciones necesarias de Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
         // Configura Firebase con tus credenciales
         const firebaseConfig = {
@@ -76,7 +83,9 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Función para guardar datos en Firestore
+        // Cargar elementos guardados al iniciar la página
+        document.addEventListener("DOMContentLoaded", cargarElementos);
+
         async function guardar() {
             const entrada = document.getElementById('entrada').value.trim();
             if (!entrada) {
@@ -86,55 +95,130 @@
 
             try {
                 // Guardar el texto en Firestore
-                await addDoc(collection(db, "prueba"), {
+                await addDoc(collection(db, "agenda"), {
                     texto: entrada,
                     fecha: new Date()
                 });
-                document.getElementById('mensaje').innerHTML = "✅ Texto guardado en Firestore.";
-                document.getElementById('mensaje').classList.add('exito');
-                cargarDatos(); // Recargar la lista
+                console.log("Texto guardado en Firestore");
+                cargarElementos(); // Recargar la lista
             } catch (error) {
-                document.getElementById('mensaje').innerHTML = `❌ Error al guardar: ${error.message}`;
-                document.getElementById('mensaje').classList.add('error');
+                console.error("Error al guardar en Firestore: ", error);
+                alert("Error al guardar. Por favor, intenta nuevamente.");
+            }
+
+            // Limpiar el textarea
+            document.getElementById('entrada').value = "";
+        }
+
+        async function eliminarTodo() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "agenda"));
+                querySnapshot.forEach(async (doc) => {
+                    await deleteDoc(doc.ref);
+                });
+                console.log("Todos los elementos eliminados de Firestore");
+                cargarElementos(); // Recargar la lista
+            } catch (error) {
+                console.error("Error al eliminar elementos: ", error);
+                alert("Error al eliminar elementos. Por favor, intenta nuevamente.");
             }
         }
 
-        // Función para cargar y mostrar datos desde Firestore
-        async function cargarDatos() {
+        async function cargarElementos() {
             const lista = document.getElementById('lista');
             lista.innerHTML = '';
 
             try {
-                const querySnapshot = await getDocs(collection(db, "prueba"));
+                const querySnapshot = await getDocs(collection(db, "agenda"));
                 querySnapshot.forEach((doc) => {
                     const texto = doc.data().texto;
+                    const id = doc.id;
+
+                    // Crear un nuevo elemento de lista
                     const li = document.createElement('li');
                     li.textContent = texto;
+
+                    // Contenedor para los botones de acciones
+                    const acciones = document.createElement('div');
+                    acciones.className = 'acciones';
+
+                    // Botón para copiar el texto
+                    const copiar = document.createElement('span');
+                    copiar.className = 'copiar-item';
+                    copiar.textContent = 'cc';
+                    copiar.onclick = () => copiarTexto(texto);
+
+                    // Botón para eliminar el elemento
+                    const eliminar = document.createElement('span');
+                    eliminar.className = 'eliminar-item';
+                    eliminar.textContent = 'x';
+                    eliminar.onclick = async () => {
+                        try {
+                            await deleteDoc(doc.ref);
+                            console.log("Elemento eliminado de Firestore");
+                            cargarElementos(); // Recargar la lista
+                        } catch (error) {
+                            console.error("Error al eliminar elemento: ", error);
+                            alert("Error al eliminar elemento. Por favor, intenta nuevamente.");
+                        }
+                    };
+
+                    // Añadir los botones al elemento de la lista
+                    acciones.appendChild(copiar);
+                    acciones.appendChild(eliminar);
+                    li.appendChild(acciones);
+
+                    // Añadir el nuevo elemento a la lista
                     lista.appendChild(li);
                 });
             } catch (error) {
-                document.getElementById('mensaje').innerHTML = `❌ Error al cargar datos: ${error.message}`;
-                document.getElementById('mensaje').classList.add('error');
+                console.error("Error al cargar elementos: ", error);
+                alert("Error al cargar elementos. Por favor, intenta nuevamente.");
             }
         }
 
-        // Cargar datos al iniciar la página
-        document.addEventListener("DOMContentLoaded", cargarDatos);
+        // Función para copiar texto
+        function copiarTexto(texto) {
+            // Crear un textarea temporal
+            const textareaTemp = document.createElement('textarea');
+            textareaTemp.value = texto;
+            document.body.appendChild(textareaTemp);
 
-        // Asignar la función guardar al botón
+            // Seleccionar el texto
+            textareaTemp.select();
+            textareaTemp.setSelectionRange(0, 99999); // Para dispositivos móviles
+
+            // Copiar el texto
+            try {
+                document.execCommand('copy');
+                //alert(`Texto copiado: ${texto}`);
+            } catch (error) {
+                console.error("Error al copiar texto: ", error);
+                alert("Error al copiar texto. Por favor, intenta nuevamente.");
+            }
+
+            // Eliminar el textarea temporal
+            document.body.removeChild(textareaTemp);
+        }
+
+        // Asignar las funciones a los botones
         window.guardar = guardar;
+        window.eliminarTodo = eliminarTodo;
     </script>
 </head>
 <body>
 
-    <h1>Prueba de Firebase: Guardar y Mostrar Datos</h1>
+    <h1>Agenda Nocturna con Firebase</h1>
     <textarea id="entrada" placeholder="Escribe algo para guardar..."></textarea>
     <div>
         <button onclick="guardar()">Guardar</button>
+        <button onclick="eliminarTodo()">Eliminar Todo</button>
     </div>
 
-    <div id="mensaje">Esperando acción...</div>
-    <ul id="lista"></ul>
+    <div id="agenda">
+        <h2>Elementos Guardados:</h2>
+        <ul id="lista"></ul>
+    </div>
 
 </body>
 </html>
