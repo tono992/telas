@@ -3,65 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agenda Nocturna con Firebase</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #1e1e1e;
-            color: #e0e0e0;
-        }
-        textarea {
-            width: 100%;
-            height: 100px;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-            background-color: #2d2d2d;
-            color: #e0e0e0;
-            border: 1px solid #444;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-        #agenda {
-            margin-top: 20px;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #2d2d2d;
-            border: 1px solid #444;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .acciones {
-            display: flex;
-            gap: 10px;
-        }
-        .copiar-item, .eliminar-item {
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .copiar-item {
-            color: #4dabf7;
-        }
-        .eliminar-item {
-            color: #ff6b6b;
-        }
-    </style>
+    <title>Agenda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Incluye Firebase Modular SDK -->
     <script type="module">
         // Importa las funciones necesarias de Firebase
@@ -73,7 +16,7 @@
             apiKey: "AIzaSyAOs0mkrrfY-Tc4rlu11boRepF6SQTi0ns",
             authDomain: "agenda-8a1fe.firebaseapp.com",
             projectId: "agenda-8a1fe",
-            storageBucket: "agenda-8a1fe.firebasestorage.app",
+            storageBucket: "agenda-8a1fe.appspot.com",
             messagingSenderId: "423043113853",
             appId: "1:423043113853:web:1a81620c6f0f9ee43e2214",
             measurementId: "G-T08HYR8VTY"
@@ -125,8 +68,8 @@
         }
 
         async function cargarElementos() {
-            const lista = document.getElementById('lista');
-            lista.innerHTML = '';
+            const contenedor = document.getElementById('contenedor-recursos');
+            contenedor.innerHTML = '';
 
             try {
                 const querySnapshot = await getDocs(collection(db, "agenda"));
@@ -134,42 +77,20 @@
                     const texto = doc.data().texto;
                     const id = doc.id;
 
-                    // Crear un nuevo elemento de lista
-                    const li = document.createElement('li');
-                    li.textContent = texto;
+                    // Crear un nuevo recuadro
+                    const recuadro = document.createElement('div');
+                    recuadro.className = 'relative border border-gray-600 w-40 h-48 p-4 overflow-hidden flex flex-col rounded-lg shadow-lg';
+                    recuadro.style.backgroundColor = generarColorPastel();
+                    recuadro.innerHTML = `
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="copiarTexto('${texto}')" class="bg-gray-700 text-white px-2 py-1 hover:bg-gray-600 rounded">C</button>
+                            <button onclick="eliminarElemento('${id}')" class="bg-gray-700 text-white px-2 py-1 hover:bg-gray-600 rounded">X</button>
+                        </div>
+                        <p class="text-sm whitespace-normal overflow-hidden overflow-ellipsis line-clamp-5 mt-2 font-serif text-gray-800 break-words">${texto}</p>
+                    `;
 
-                    // Contenedor para los botones de acciones
-                    const acciones = document.createElement('div');
-                    acciones.className = 'acciones';
-
-                    // Botón para copiar el texto
-                    const copiar = document.createElement('span');
-                    copiar.className = 'copiar-item';
-                    copiar.textContent = 'cc';
-                    copiar.onclick = () => copiarTexto(texto);
-
-                    // Botón para eliminar el elemento
-                    const eliminar = document.createElement('span');
-                    eliminar.className = 'eliminar-item';
-                    eliminar.textContent = 'x';
-                    eliminar.onclick = async () => {
-                        try {
-                            await deleteDoc(doc.ref);
-                            console.log("Elemento eliminado de Firestore");
-                            cargarElementos(); // Recargar la lista
-                        } catch (error) {
-                            console.error("Error al eliminar elemento: ", error);
-                            alert("Error al eliminar elemento. Por favor, intenta nuevamente.");
-                        }
-                    };
-
-                    // Añadir los botones al elemento de la lista
-                    acciones.appendChild(copiar);
-                    acciones.appendChild(eliminar);
-                    li.appendChild(acciones);
-
-                    // Añadir el nuevo elemento a la lista
-                    lista.appendChild(li);
+                    // Añadir el recuadro al contenedor
+                    contenedor.appendChild(recuadro);
                 });
             } catch (error) {
                 console.error("Error al cargar elementos: ", error);
@@ -177,7 +98,17 @@
             }
         }
 
-        // Función para copiar texto
+        async function eliminarElemento(id) {
+            try {
+                await deleteDoc(doc(db, "agenda", id));
+                console.log("Elemento eliminado de Firestore");
+                cargarElementos(); // Recargar la lista
+            } catch (error) {
+                console.error("Error al eliminar elemento: ", error);
+                alert("Error al eliminar elemento. Por favor, intenta nuevamente.");
+            }
+        }
+
         function copiarTexto(texto) {
             // Crear un textarea temporal
             const textareaTemp = document.createElement('textarea');
@@ -201,24 +132,29 @@
             document.body.removeChild(textareaTemp);
         }
 
+        function generarColorPastel() {
+            const r = Math.floor(Math.random() * 56) + 200; // Rango de 200 a 255
+            const g = Math.floor(Math.random() * 56) + 200; // Rango de 200 a 255
+            const b = Math.floor(Math.random() * 56) + 200; // Rango de 200 a 255
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
         // Asignar las funciones a los botones
         window.guardar = guardar;
         window.eliminarTodo = eliminarTodo;
+        window.eliminarElemento = eliminarElemento;
+        window.copiarTexto = copiarTexto;
     </script>
 </head>
-<body>
-
-    <h1>Agenda Nocturna con Firebase</h1>
-    <textarea id="entrada" placeholder="Escribe algo para guardar..."></textarea>
-    <div>
-        <button onclick="guardar()">Guardar</button>
-        <button onclick="eliminarTodo()">Eliminar Todo</button>
+<body class="bg-gray-900 text-white flex flex-col items-center p-4">
+    <h1 class="text-2xl mb-4 font-serif">Agenda</h1>
+    <textarea id="entrada" class="w-full max-w-lg h-20 border border-gray-600 mb-4 p-2 bg-gray-800 text-white placeholder-gray-400" placeholder="Escribe algo..."></textarea>
+    <div class="flex space-x-2 mb-4">
+        <button onclick="guardar()" class="bg-gray-700 text-white px-4 py-2 hover:bg-gray-600 rounded">Guardar</button>
+        <button onclick="eliminarTodo()" class="bg-gray-700 text-white px-4 py-2 hover:bg-gray-600 rounded">Borrar todo</button>
     </div>
-
-    <div id="agenda">
-        <h2>Elementos Guardados:</h2>
-        <ul id="lista"></ul>
+    <div id="contenedor-recursos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Los recuadros se generarán dinámicamente aquí -->
     </div>
-
 </body>
 </html>
